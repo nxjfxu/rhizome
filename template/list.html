@@ -1,0 +1,22 @@
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" >
+        <title>{{ title }}</title>
+        <link rel="stylesheet" href="/style.css"/>
+    </head>
+    <body>
+        <hr/>
+        <nav>{% include "topnav.html" %}</nav>
+        <hr/>
+        <h1 id="id-header"><pre>{{ title }}</pre></h1>
+        <hr/>
+        <ul id="anchor-list">
+            {% for item in items %}
+            <li>
+                <a class="anchor" href="/item/{{ item.id }}">[{{ item.id }}]</a>
+            </li>
+            {% endfor %}
+        </ul>
+        <hr/>
+    </body>
+</html>

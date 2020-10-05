@@ -1,0 +1,36 @@
+[package]
+name = "rhizome"
+version = "0.1.0"
+authors = ["Xu, Junfeng <xu.junfeng@outlook.com>"]
+edition = "2018"
+
+
+[dependencies]
+actix-rt = "1"
+actix-web = "3"
+clap = "2"
+lazy_static = "1"
+serde = "1"
+tera = "1"
+
+lru = "0.6"
+
+[dependencies.diesel]
+version = "1"
+features = [ "r2d2", "sqlite" ]
+
+[dependencies.diesel_migrations]
+version = "1"
+
+# In-repository dependencies
+
+[dependencies.hormone]
+version = "0.1"
+path = "hormone"
+
+
+
+
+#[profile.release]
+#debug = true
+

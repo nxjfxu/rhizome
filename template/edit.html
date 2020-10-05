@@ -1,0 +1,38 @@
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" >
+        {% if new %}
+        <title>[+]</title>
+        {% else %}
+        <title>_/[{{ id }}]</title>
+        {% endif %}
+        <link rel="stylesheet" href="/style.css"/>
+    </head>
+    <body>
+        <hr/>
+        <nav>{% include "topnav.html" %}</nav>
+        <hr/>
+        {% if new %}
+        <h1 id="id-header"><pre>[+]</pre></h1>
+        {% else %}
+        <h1 id="id-header"><pre>{% if anchor %}^{% else %} {% endif %}[{{ id }}]</pre></h1>
+        {% endif %}
+        <hr/>
+        <form id="edit-form" action="{% if new %}/new{% else %}/item/{{ id }}{% endif %}" method="post">
+            {% if new %}
+            <input class="monospace-text" name="id" type="text" value="{{ id }}" />
+            {% endif %}
+            <textarea name="text" rows="{{ row_count }}" cols="80">{{ text }}</textarea>
+            <br/>
+            <label for="anchor"><code>[^]</code></label>
+            <input name="anchor" type="checkbox" {% if anchor %}checked=true{% endif %}/>
+            <br/>
+            <input class="generic-button" type="submit" value=">~"/>
+        </form>
+        <hr/>
+        {% if error %}
+        <pre>{{ error }}</pre>
+        <hr/>
+        {% endif %}
+    </body>
+</html>

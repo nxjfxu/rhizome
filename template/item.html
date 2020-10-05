@@ -1,0 +1,19 @@
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" >
+        <title>[{{ id }}]</title>
+        <link rel="stylesheet" href="/style.css"/>
+    </head>
+    <body>
+        <hr/>
+        <nav>{% include "topnav.html" %}</nav>
+        <hr/>
+        <h1 id="id-header"><pre>{% if anchor %}^{% else %} {% endif %}[{{ id }}]</pre></h1>
+        <hr/>
+        <pre id="main">{{ text | safe }}</pre>
+        <hr/>
+        <pre><a class="anchor" href="/edit/{{ id }}">[_/]</a></pre>
+        <hr/>
+        <span>{{ cycles }} - {{ time_spent }}</span>
+    </body>
+</html>
