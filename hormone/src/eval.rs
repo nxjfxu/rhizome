@@ -910,9 +910,9 @@ impl<'l, 's> Evaluator<'l, 's> {
                                 self.available_required_stack.push(BTreeSet::new());
 
                                 pushk!(RememberRequire(i.clone()));
+                                pushk!(MakeRequireAvailable(i.clone()));
                                 pushk!(ReturnFromOther);
                                 pushk!(RestoreContext);
-                                pushk!(MakeRequireAvailable(i.clone()));
 
                                 pushk!(Data(expr));
                             }
