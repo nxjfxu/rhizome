@@ -8,20 +8,13 @@ use crate::heap::*;
 use crate::parse::*;
 use crate::syntax::*;
 
+use crate::sanitize::sanitize;
+
 use OpCode::*;
 use Expr::*;
 
 
 static PRELUDE_ID: &'static str = ".^";
-
-
-macro_rules! escape {
-    ( $x:expr ) => {
-        {
-            format!("{}", html!{ : $x })
-        }
-    };
-}
 
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -986,7 +979,7 @@ impl<'l, 's> Evaluator<'l, 's> {
                         },
                         Op(Include) => if let Some(Str(i)) = args.get(0) {
                             if let Some(s) = self.lookup(i) {
-                                pushd!(Ok(Str(escape!(&s))));
+                                pushd!(Ok(Str(sanitize(&s))));
                             } else {
                                 pushd!(Err(OtherError(format!(
                                     "[{}] is not found.",

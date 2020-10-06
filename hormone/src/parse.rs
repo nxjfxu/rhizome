@@ -2,13 +2,8 @@
 
 use crate::syntax::*;
 
-macro_rules! escape {
-    ( $x:expr ) => {
-        {
-            format!("{}", html!{ : $x })
-        }
-    };
-}
+use crate::sanitize::sanitize;
+
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum ParseError {
@@ -513,7 +508,7 @@ pub fn speak(ast: &Ast) -> Expr {
         Ast::Quote(_, body)
             => App(Box::new(Op(Quote)), vec![Box::new(speak(body))]),
         */
-        Ast::Text(_, text) => Str(escape!(text)),
+        Ast::Text(_, text) => Str(sanitize(text)),
         Ast::RawText(_, text) => Str(text.clone()),
         Ast::Atom(_, s) => str_to_expr(&s),
         /*

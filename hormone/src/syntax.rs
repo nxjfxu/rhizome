@@ -3,16 +3,10 @@
 use std::collections::{BTreeMap, HashMap, BTreeSet};
 use std::iter::FromIterator;
 
+use crate::sanitize::sanitize;
+
 
 pub type Addr = usize;
-
-macro_rules! escape {
-    ( $x:expr ) => {
-        {
-            format!("{}", html!{ : $x })
-        }
-    };
-}
 
 // AST
 
@@ -394,15 +388,15 @@ impl Expr {
         use Expr::*;
 
         match self {
-            Closure(Some(f), _, arg, _) => escape!( format!(
+            Closure(Some(f), _, arg, _) => sanitize(&format!(
                 "#<procedure:{}:{}>",
                 f,
                 arg.size()
-            ) ),
-            Closure(None, _, arg, _) => escape!( format!(
+            )),
+            Closure(None, _, arg, _) => sanitize(&format!(
                 "#<prodecure::{}>",
                 arg.size()
-            ) ),
+            )),
 
             Cell(car_box, cdr_box) => if let Some(es) = self.to_list() {
                 format!(
@@ -433,8 +427,8 @@ impl Expr {
                 html! {
                     span(class="error") { : "!!( " ; : s ; : " )" }
                 }),
-            Op(op) => escape!( format!("#<op:{}>", op) ),
-            Var(name) => format!("${}", escape!( name )),
+            Op(op) => sanitize(&format!("#<op:{}>", op)),
+            Var(name) => format!("${}", sanitize(name)),
             App(func_box, args_box) => format!(
                 "({} {})",
                 func_box.fmt_inner(quoted),

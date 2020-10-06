@@ -11,6 +11,8 @@ mod eval;
 use eval::*;
 pub use eval::{LookupFn, StopFn, Evaluation};
 
+mod sanitize;
+
 mod syntax;
 use crate::syntax::{Expr, OpCode};
 
