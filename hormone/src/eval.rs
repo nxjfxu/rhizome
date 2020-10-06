@@ -109,6 +109,8 @@ fn parse_bindings(bindings: &[Expr]) -> EvalResult<(Vec<String>, Vec<Expr>)> {
 pub struct EvaluatorConfig<'l, 's> {
     lookup_fn: &'l LookupFn<'l>,
     stop_fn: Option<&'s StopFn>,
+
+    page_extension: Option<String>,
 }
 
 impl<'l, 's> Default for EvaluatorConfig<'l, 's> {
@@ -116,6 +118,8 @@ impl<'l, 's> Default for EvaluatorConfig<'l, 's> {
         EvaluatorConfig {
             lookup_fn: &|_| None,
             stop_fn: None,
+
+            page_extension: None,
         }
     }
 }
@@ -133,10 +137,23 @@ impl<'l, 's> EvaluatorConfig<'l, 's> {
         EvaluatorConfig { stop_fn: Some(stop), ..self }
     }
 
+    pub fn with_page_extension(self, ext: &str) -> Self {
+        if ext.len() > 0 {
+            EvaluatorConfig {
+                page_extension: Some(format!(".{}", ext)),
+                ..self
+            }
+        } else {
+            self
+        }
+    }
+
     pub fn for_item(self, iid: &str) -> Evaluator<'l, 's> {
         Evaluator {
             lookup_fn: self.lookup_fn,
             stop_fn: self.stop_fn,
+
+            page_extension: self.page_extension.unwrap_or(String::from("")),
 
             current_item_stack: vec![iid.to_string()],
 
@@ -166,6 +183,8 @@ pub struct Evaluation {
 pub struct Evaluator<'l, 's> {
     lookup_fn: &'l LookupFn<'l>,
     stop_fn: Option<&'s StopFn>,
+
+    page_extension: String,
 
     current_item_stack: Vec<String>,
 
@@ -267,7 +286,11 @@ impl<'l, 's> Evaluator<'l, 's> {
                 Ok(Str(format!(
                     "{}",
                     html!{ a(class="anchor",
-                             href = Raw(format!("{}", &final_path.display())))
+                             href = Raw(format!(
+                                 "{}{}",
+                                 &final_path.display(),
+                                 &self.page_extension
+                             )))
                            : Raw(format!("[{}]", &dest))
                     })))
             },

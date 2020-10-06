@@ -62,7 +62,8 @@ pub fn evaluate<'l, 's>(
     item: &str,
     lookup: &'l LookupFn,
     string: bool,
-    input: &str
+    input: &str,
+    page_extension: &str,
 ) -> Result<Evaluation, HormoneError> {
     let ast = parse(input)?;
     let expr = speak(&ast);
@@ -73,6 +74,7 @@ pub fn evaluate<'l, 's>(
     };
     let evaluator = EvaluatorConfig::new()
         .with_lookup(lookup)
+        .with_page_extension(page_extension)
         .for_item(item);
     Ok(evaluator.eval_to_result(expr)?)
 }
@@ -82,7 +84,8 @@ pub fn evaluate_timeout<'l>(
     lookup: &'l LookupFn,
     timeout: u128,
     string: bool,
-    input: &str
+    input: &str,
+    page_extension: &str,
 ) -> Result<Evaluation, HormoneError> {
     use std::time::Instant;
 
@@ -101,6 +104,7 @@ pub fn evaluate_timeout<'l>(
     let evaluator = EvaluatorConfig::new()
         .with_lookup(lookup)
         .with_stop(&stop)
+        .with_page_extension(page_extension)
         .for_item(item);
     Ok(evaluator.eval_to_result(expr)?)
 }
