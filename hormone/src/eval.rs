@@ -257,18 +257,11 @@ impl<'l, 's> Evaluator<'l, 's> {
                 )))?.clone())?;
 
                 let path_to_current = Path::new(self.current_item());
-                let mut path_to_dest = Path::new(&dest);
-                let mut final_path = PathBuf::new();
-                let mut matching = true;
-                for c in path_to_current.parent().unwrap().components() {
-                    matching = matching && path_to_dest.starts_with(c);
-
-                    if matching {
-                        path_to_dest = path_to_dest.strip_prefix(c).unwrap();
-                    } else {
-                        final_path.push("..");
-                    }
-                }
+                let path_to_dest = Path::new(&dest);
+                let mut final_path = path_to_current.parent()
+                    .unwrap()
+                    .components()
+                    .fold(PathBuf::from("."), |pb, _| pb.join(".."));
                 final_path.push(path_to_dest);
 
                 Ok(Str(format!(
