@@ -250,14 +250,32 @@ impl<'l, 's> Evaluator<'l, 's> {
             },
 
             Link => {
-                let t = to_str(args.get(0).ok_or(ArgumentError(String::from(
+                use std::path::{Path, PathBuf};
+
+                let dest = to_str(args.get(0).ok_or(ArgumentError(String::from(
                     "Expecting an ID as the argument."
                 )))?.clone())?;
+
+                let path_to_current = Path::new(self.current_item());
+                let mut path_to_dest = Path::new(&dest);
+                let mut final_path = PathBuf::new();
+                let mut matching = true;
+                for c in path_to_current.parent().unwrap().components() {
+                    matching = matching && path_to_dest.starts_with(c);
+
+                    if matching {
+                        path_to_dest = path_to_dest.strip_prefix(c).unwrap();
+                    } else {
+                        final_path.push("..");
+                    }
+                }
+                final_path.push(path_to_dest);
+
                 Ok(Str(format!(
                     "{}",
                     html!{ a(class="anchor",
-                             href = Raw(format!("/item/{}", &t)))
-                           : Raw(format!("[{}]", &t))
+                             href = Raw(format!("{}", &final_path.display())))
+                           : Raw(format!("[{}]", &dest))
                     })))
             },
 
