@@ -58,7 +58,7 @@ impl std::error::Error for EvalError { }
 use EvalError::*;
 
 
-pub type LookupFn<'l>  = dyn 'l + Sync + Send + Fn(&str) -> Option<String>;
+pub type LookupFn<'l>  = dyn 'l + Fn(&str) -> Option<String>;
 pub type StopFn        = dyn Fn()     -> bool;
 pub type EvalResult<T> = Result<T, EvalError>;
 
