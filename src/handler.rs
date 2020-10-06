@@ -40,21 +40,71 @@ lazy_static! {
 }
 
 
+pub fn iid_to_back_path(iid: &str) -> std::path::PathBuf {
+    std::path::Path::new(iid).components()
+        .fold(std::path::PathBuf::from("."), |pb, _| pb.join(".."))
+}
+
+
 fn is_valid_id(iid: &str) -> bool {
     iid.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '/')
 }
 
 
-fn new_inner(iid: Option<&str>) -> Result<HttpResponse> {
+fn new_inner(iid: Option<&str>, back_path: &str) -> Result<HttpResponse> {
     let mut context = Context::new();
     context.insert("id", iid.unwrap_or(""));
     context.insert("anchor", &false);
     context.insert("text", &"");
     context.insert("new", &true);
     context.insert("row_count", &10);
+    context.insert("back_path", back_path);
+    context.insert("edit", &true);
     Ok(web::HttpResponse::Ok()
        .body(TEMPLATES.render("edit.html", &context).unwrap())
     )
+}
+
+
+pub fn render_item(
+    lookup: &LookupFn,
+    i: &mut Item,
+    timeout: u128,
+    edit: bool,
+    back_path: &str,
+    page_extension: &str,
+) -> String {
+    let begin = Instant::now();
+    let evaluation = evaluate_timeout(
+        &i.id,
+        &lookup,
+        timeout,
+        true,
+        &i.text,
+        page_extension,
+    );
+    i.text = match &evaluation {
+        Ok(e) => e.expr.to_string(),
+        Err(e) => format!("<span class=\"error\">{}</span>", e),
+    };
+    let cycles = match &evaluation {
+        Ok(e) => e.cycles,
+        Err(_) => 0,
+    };
+
+    let time_spent = begin.elapsed().as_nanos();
+    let time_spent_string = format!(
+        "{}.{:02}ms",
+        time_spent / 1_000_000,
+        (time_spent % 1_000_000) / 10_000,
+    );
+    let mut ctx = i.to_context();
+    ctx.insert("time_spent", &time_spent_string);
+    ctx.insert("cycles", &cycles);
+    ctx.insert("edit", &edit);
+    ctx.insert("back_path", back_path);
+
+    TEMPLATES.render("item.html", &ctx).unwrap()
 }
 
 
@@ -69,6 +119,8 @@ pub async fn anchorage(
     let mut context = Context::new();
     context.insert("items", &anchored_items);
     context.insert("title", "#[^^^]");
+    context.insert("back_path", ".");
+    context.insert("edit", &true);
     Ok(web::HttpResponse::Ok()
        .content_type("text/html; charset=UTF-8")
        .body(TEMPLATES.render("list.html", &context)
@@ -86,6 +138,8 @@ pub async fn all(
     let mut context = Context::new();
     context.insert("items", &all_items);
     context.insert("title", "#[=-=]");
+    context.insert("back_path", ".");
+    context.insert("edit", &true);
     Ok(web::HttpResponse::Ok()
        .content_type("text/html; charset=UTF-8")
        .body(TEMPLATES.render("list.html", &context)
@@ -102,49 +156,29 @@ pub async fn get_item(
     let iid = iid.into_inner();
     let query_result = item.find(&iid)
         .first::<Item>(&db.get().unwrap());
+    let back_path = iid_to_back_path(&iid).display().to_string();
 
     match query_result {
         Ok(mut i) => {
-            let f: Box<LookupFn> = Box::new(|iid| {
-                item.find(iid)
+            let lookup: Box<LookupFn> = Box::new(|iid| {
+                item.find(&iid)
                     .first::<Item>(&db.get().unwrap())
                     .map(|i| i.text)
                     .ok()
             });
 
-            let begin = Instant::now();
-            let evaluation = evaluate_timeout(
-                &iid,
-                &f,
+            let body_text = render_item(
+                &lookup,
+                &mut i,
                 *timeout.into_inner(),
                 true,
-                &i.text
+                &back_path,
+                ""
             );
-            i.text = match &evaluation {
-                Ok(e) => e.expr.to_string(),
-                Err(e) => format!("<span class=\"error\">{}</span>", e),
-            };
-            let cycles = match &evaluation {
-                Ok(e) => e.cycles,
-                Err(_) => 0,
-            };
-
-            let time_spent = begin.elapsed().as_nanos();
-            let time_spent_string = format!(
-                "{}.{:02}ms",
-                time_spent / 1_000_000,
-                (time_spent % 1_000_000) / 10_000,
-            );
-            let mut ctx = i.to_context();
-            ctx.insert("time_spent", &time_spent_string);
-            ctx.insert("cycles", &cycles);
-
-            Ok(web::HttpResponse::Ok()
-               .body(TEMPLATES.render("item.html", &ctx).unwrap())
-            )
+            Ok(web::HttpResponse::Ok().body(body_text))
         },
 
-        _ => new_inner(Some(&iid)),
+        _ => new_inner(Some(&iid), &back_path),
     }
 }
 
@@ -153,7 +187,8 @@ pub async fn edit_item(
     iid: web::Path<String>,
     db: web::Data<Arc<Pool<ConnectionManager<SqliteConnection>>>>,
 ) -> Result<HttpResponse> {
-    let query_result = item.find(iid.into_inner())
+    let iid = iid.into_inner();
+    let query_result = item.find(&iid)
         .first::<Item>(&db.get().unwrap());
 
     match query_result {
@@ -164,6 +199,8 @@ pub async fn edit_item(
                 "row_count",
                 &(i.text.lines().count() + 10)
             );
+            context.insert("back_path", &iid_to_back_path(&iid));
+            context.insert("edit", &true);
 
             Ok(web::HttpResponse::Ok()
                .body(TEMPLATES.render("edit.html", &context).unwrap())
@@ -223,7 +260,7 @@ pub async fn post_item(
 
 #[get("/new")]
 pub async fn new_item() -> Result<HttpResponse> {
-    new_inner(None)
+    new_inner(None, ".")
 }
 
 #[derive(Serialize, Deserialize)]
@@ -255,6 +292,8 @@ pub async fn post_new_item(
         context.insert("text", &params.text);
         context.insert("new", &true);
         context.insert("error", &"#!");
+        context.insert("back_path", ".");
+        context.insert("edit", &true);
         return Ok(web::HttpResponse::BadRequest()
                   .body(TEMPLATES.render("edit.html", &context).unwrap())
         )

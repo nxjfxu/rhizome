@@ -2,7 +2,7 @@
     <head>
         <meta charset="UTF-8" >
         <title>[{{ id }}]</title>
-        <link rel="stylesheet" href="/style.css"/>
+        <link rel="stylesheet" href="{{ back_path }}/style.css"/>
     </head>
     <body>
         <hr/>
@@ -12,7 +12,7 @@
         <hr/>
         <pre id="main">{{ text | safe }}</pre>
         <hr/>
-        <pre><a class="anchor" href="/edit/{{ id }}">[_/]</a></pre>
+        <pre>{% if edit %}<a class="anchor" href="/edit/{{ id }}">[_/]</a>{% endif %} </pre>
         <hr/>
         <span>{{ cycles }} - {{ time_spent }}</span>
     </body>
