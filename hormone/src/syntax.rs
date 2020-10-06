@@ -624,6 +624,7 @@ pub enum Ast {
     /*
     Quote(Srcloc, Box<Ast>),
     */
+    RawText(Srcloc, String),
     Text(Srcloc, String),
     Atom(Srcloc, String),
     List(Srcloc, Vec<Ast>),

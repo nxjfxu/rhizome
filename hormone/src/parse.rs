@@ -66,6 +66,8 @@ pub fn parse(input: &str) -> Result<Ast, ParseError> {
             Ast::Quote(srcloc, body)
                 => Ast::Quote(srcloc, Box::new(push_char(*body, c))),
             */
+            Ast::RawText(srcloc, mut text)
+                => Ast::RawText(srcloc, { text.push(c); text }),
             Ast::Text(srcloc, mut text)
                 => Ast::Text(srcloc, { text.push(c); text }),
             Ast::Atom(srcloc, mut atom)
@@ -100,6 +102,7 @@ pub fn parse(input: &str) -> Result<Ast, ParseError> {
         Fabric,
         Text,
         Escalation,
+        Hash,
         /*
         Quotation,
         */
@@ -224,12 +227,23 @@ pub fn parse(input: &str) -> Result<Ast, ParseError> {
                 stack.push(acc);
                 acc = Ast::Text((line, col), String::new());
             },
+            (State::Escalation, '#') => {
+                state = State::Hash;
+            },
             /*
             (State::Escalation, '\'') => {
                 state = State::Quotation;
             },
             */
             (State::Escalation, _)
+                => return Err(CharacterFlaw((line, col))),
+
+            (State::Hash, '"') => {
+                state = State::String;
+                stack.push(acc);
+                acc = Ast::RawText((line, col), String::new());
+            },
+            (State::Hash, _)
                 => return Err(CharacterFlaw((line, col))),
 
             /*
@@ -347,6 +361,10 @@ pub fn parse(input: &str) -> Result<Ast, ParseError> {
                 state = State::String;
                 stack.push(acc);
                 acc = Ast::Text((line, col), String::new());
+            },
+            (State::List, '#') => {
+                state_stack.push(state);
+                state = State::Hash;
             },
             (State::List, c) if is_atom_character(c) => {
                 state_stack.push(state);
@@ -496,6 +514,7 @@ pub fn speak(ast: &Ast) -> Expr {
             => App(Box::new(Op(Quote)), vec![Box::new(speak(body))]),
         */
         Ast::Text(_, text) => Str(escape!(text)),
+        Ast::RawText(_, text) => Str(text.clone()),
         Ast::Atom(_, s) => str_to_expr(&s),
         /*
         Ast::List(_, elems) if elems.is_empty()
