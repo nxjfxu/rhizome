@@ -502,7 +502,7 @@ impl<'l, 's> Evaluator<'l, 's> {
             RestoreContext,
             ReturnFromOther,
             RememberRequire(String),
-            MakeRequireAvailable(String),
+            MakeRequireAvailable,
             CloseScope,
             AfterFun(Vec<Expr>),
             Application(usize, Expr),
@@ -527,6 +527,7 @@ impl<'l, 's> Evaluator<'l, 's> {
         let mut data_stack:   Vec<Expr>        = Vec::with_capacity(2000);
         let mut return_stack: Vec<ReturnFrame> = Vec::with_capacity(2000);
         let mut frames = vec![0];
+        let mut to_make_available = vec![BTreeSet::new()];
 
         macro_rules! open_frame {
             { } => { { frames.push(0); } };
@@ -594,6 +595,11 @@ impl<'l, 's> Evaluator<'l, 's> {
                         },
                         ReturnFromOther => {
                             self.current_item_stack.pop().unwrap();
+                        },
+                        MakeRequireAvailable => {
+                            self.available_required_stack.last_mut()
+                                .unwrap()
+                                .append(&mut to_make_available.pop().unwrap());
                         },
                         CloseScope => self.context.close(),
                         _ => (),
@@ -843,6 +849,25 @@ impl<'l, 's> Evaluator<'l, 's> {
                         ))));
                     },
 
+                    Op(ProvideRequired) =>
+                        if let Some(Str(i)) = arg_exprs.get(0) {
+                            if self.is_required_available(i) {
+                                pushd!(Ok(Void));
+                                to_make_available.last_mut()
+                                    .unwrap()
+                                    .insert(i.clone());
+                            } else {
+                                pushd!(Err(ArgumentError(format!(
+                                    "Must require '{}' before providing its content.",
+                                    i
+                                ))));
+                            }
+                        } else {
+                            pushd!(Err(ArgumentError(String::from(
+                                "Expecting an ID as the argument."
+                            ))));
+                        },
+
                     Op(Provide) => {
                         let mut xs = Vec::new();
                         for e in arg_exprs.iter() {
@@ -882,7 +907,11 @@ impl<'l, 's> Evaluator<'l, 's> {
                         Op(Require) => if let Some(Str(i)) = args.get(0) {
                             if self.required.contains_key(i) {
                                 pushd!(Ok(self.required[i][" "].clone()));
-                                pushk!(MakeRequireAvailable(i.clone()));
+                                pushk!(MakeRequireAvailable);
+                                to_make_available.push(BTreeSet::new());
+                                to_make_available.last_mut()
+                                    .unwrap()
+                                    .insert(i.clone());
                             } else {
                                 let ast = self.lookup(i).ok_or(
                                     OtherError(format!(
@@ -910,7 +939,11 @@ impl<'l, 's> Evaluator<'l, 's> {
                                 self.available_required_stack.push(BTreeSet::new());
 
                                 pushk!(RememberRequire(i.clone()));
-                                pushk!(MakeRequireAvailable(i.clone()));
+                                pushk!(MakeRequireAvailable);
+                                to_make_available.push(BTreeSet::new());
+                                to_make_available.last_mut()
+                                    .unwrap()
+                                    .insert(i.clone());
                                 pushk!(ReturnFromOther);
                                 pushk!(RestoreContext);
 
@@ -1036,10 +1069,10 @@ impl<'l, 's> Evaluator<'l, 's> {
                         .insert(String::from(" "), e);
                 },
 
-                MakeRequireAvailable(iid) => {
+                MakeRequireAvailable => {
                     self.available_required_stack.last_mut()
                         .unwrap()
-                        .insert(iid);
+                        .append(&mut to_make_available.pop().unwrap());
                 },
 
                 Data(e) => return Err(Unsupported(e.to_string())),

@@ -67,6 +67,7 @@ pub enum OpCode {
     // Communication
     Provide,
     Require,
+    ProvideRequired,
 
     // Sequence
     Do,
@@ -137,6 +138,7 @@ impl std::fmt::Display for OpCode {
 
             Provide => write!(f, "~>"),
             Require => write!(f, "<~"),
+            ProvideRequired => write!(f, ">~>"),
 
             Do => write!(f, ">>"),
 
@@ -209,6 +211,7 @@ impl OpCode {
 
             "~>" => Some(Provide),
             "<~" => Some(Require),
+            ">~>" => Some(ProvideRequired),
 
             ">>" => Some(Do),
 
