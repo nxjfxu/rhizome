@@ -1,6 +1,6 @@
 [package]
 name = "rhizome"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Xu, Junfeng <xu.junfeng@outlook.com>"]
 edition = "2018"
 
