@@ -50,7 +50,7 @@ h1#id-header pre {
     margin: 0;
 }
 
-pre#main {
+#main {
     padding: 2px;
     color: black;
 }

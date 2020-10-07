@@ -10,7 +10,7 @@
         <hr/>
         <h1 id="id-header"><pre>{% if anchor %}^{% else %} {% endif %}[{{ id }}]</pre></h1>
         <hr/>
-        <pre id="main">{{ text | safe }}</pre>
+        <div id="main">{{ text | safe }}</div>
         <hr/>
         <pre>{% if edit %}<a class="anchor" href="/edit/{{ id }}">[_/]</a>{% endif %} </pre>
         <hr/>
