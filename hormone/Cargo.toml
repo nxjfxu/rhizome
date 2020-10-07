@@ -9,5 +9,9 @@ edition = "2018"
 [dependencies]
 horrorshow = "0.8"
 
+[dependencies.pulldown-cmark]
+version = "0.8"
+default-features = false
+
 
 

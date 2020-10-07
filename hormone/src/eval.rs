@@ -452,6 +452,30 @@ impl<'l, 's> Evaluator<'l, 's> {
 
             IsVoid if args.len() == 1 => Ok(Expr::from_bool(args[0] == Void)),
 
+            // Native operations
+            Native("markdown") => {
+                let mut results = Vec::with_capacity(args.len());
+                for arg in args {
+                    results.push(match arg {
+                        Ref(addr) => match self.heap.get(addr) {
+                            Some(e) => e.to_string(),
+                            None => return Err(Unsupported(addr.to_string())),
+                        },
+                        e => e.to_string(),
+                    });
+                }
+
+                let text = results.join("");
+
+                use pulldown_cmark::{Parser, html};
+
+                let parser = Parser::new(&text);
+                let mut markdown = String::new();
+                html::push_html(&mut markdown, parser);
+
+                Ok(Str(markdown))
+            },
+
             _ => Err(Unsupported(op.to_string()))
         }
     }

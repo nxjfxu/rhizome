@@ -78,6 +78,8 @@ pub enum OpCode {
     IsOperator,
     IsObject,
     IsVoid,
+
+    Native(&'static str),
 }
 
 impl std::fmt::Display for OpCode {
@@ -145,6 +147,8 @@ impl std::fmt::Display for OpCode {
             IsOperator => write!(f, "%?"),
             IsObject => write!(f, "+?"),
             IsVoid => write!(f, "??"),
+
+            Native(n) => write!(f, "{}", n),
         }
     }
 }
@@ -218,6 +222,8 @@ impl OpCode {
             "%?" => Some(IsOperator),
             "+?" => Some(IsObject),
             "??" => Some(IsVoid),
+
+            "~markdown" => Some(Native("markdown")),
 
             _ => None,
         }
