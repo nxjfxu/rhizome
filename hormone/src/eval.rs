@@ -1022,10 +1022,8 @@ impl<'l, 's> Evaluator<'l, 's> {
                         Op(ApplyTo) if arg_count == 2 => {
                             let f = args.remove(0);
                             if let Some(l) = args.remove(0).to_list() {
-                                pushk!(Application(l.len(), f));
-                                for arg in l {
-                                    pushd!(Ok(arg))
-                                }
+                                pushk!(AfterFun(l));
+                                pushd!(Ok(f));
                             } else {
                                 pushd!(Err(ArgumentError(String::from(
                                     "'apply' takes two arguments."
