@@ -13,7 +13,7 @@
         <ul id="anchor-list">
             {% for item in items %}
             <li>
-                <a class="anchor" href="/item/{{ item.id }}">[{{ item.id }}]</a>
+                <a class="anchor" href="/item/{{ item.id }}{{ page_extension | default(value="")}}">[{{ item.id }}]</a>
             </li>
             {% endfor %}
         </ul>

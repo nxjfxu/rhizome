@@ -1,1 +1,1 @@
-<a class="anchor" href="{{ back_path }}/anchorage">[^^^]</a>{% if edit %}<a class="anchor" href="/new" >[+]</a>{% endif %}
+<a class="anchor" href="{{ back_path }}/anchorage{{ page_extension | default(value="") }}">[^^^]</a>{% if edit %}<a class="anchor" href="/new{{ page_extension | default(value="")}}" >[+]</a>{% endif %}

@@ -104,6 +104,13 @@ pub fn render_item(
     ctx.insert("edit", &edit);
     ctx.insert("back_path", back_path);
 
+    let page_extension = if page_extension == "" {
+        page_extension.to_string()
+    } else {
+        format!(".{}", page_extension)
+    };
+    ctx.insert("page_extension", &page_extension);
+
     TEMPLATES.render("item.html", &ctx).unwrap()
 }
 
