@@ -405,24 +405,23 @@ pub fn parse(input: &str) -> Result<Ast, ParseError> {
                 state = pop_state_stack!();
                 acc = match acc {
                     Ast::Text(srcloc, text) => {
-                        let parts = text.split_whitespace()
+                        let mut parts = text.splitn(2, char::is_whitespace)
                             .collect::<Vec<_>>();
 
-                        if parts.len() == 0 || parts.len() > 2 {
+                        if parts.len() == 0 {
                             return Err(BadReference(srcloc));
                         }
 
                         let op = if parts.len() == 2 {
-                            Ast::Atom(srcloc, parts[0].to_string())
+                            Ast::Atom(srcloc, parts.remove(0).to_string())
                         } else {
                             Ast::Atom(srcloc, String::from("=>"))
                         };
 
-                        let target = if parts.len() == 2 {
-                            Ast::Text(srcloc, parts[1].to_string())
-                        } else {
-                            Ast::Text(srcloc, parts[0].to_string())
-                        };
+                        let target = Ast::Text(
+                            srcloc,
+                            parts.remove(0).trim().to_string()
+                        );
 
                         Ast::List(srcloc, vec![op, target])
                     },
