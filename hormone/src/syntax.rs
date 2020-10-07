@@ -558,7 +558,7 @@ impl Expr {
                     .map(String::to_owned)
             ),
 
-            Var(x) => {
+            Var(x) if OpCode::from_str(x).is_none() => {
                 let mut set = BTreeSet::new();
                 set.insert(x.to_owned());
                 set
