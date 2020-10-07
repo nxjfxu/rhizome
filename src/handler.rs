@@ -66,6 +66,26 @@ fn new_inner(iid: Option<&str>, back_path: &str) -> Result<HttpResponse> {
 }
 
 
+pub fn render_list(
+    items: &Vec<&Item>,
+    title: &str,
+    back_path: &str,
+    page_extension: &str,
+) -> String {
+    let page_extension = if page_extension == "" {
+        page_extension.to_string()
+    } else {
+        format!(".{}", page_extension)
+    };
+    let mut context = Context::new();
+    context.insert("items", &items);
+    context.insert("title", title);
+    context.insert("back_path", back_path);
+    context.insert("edit", &true);
+    context.insert("page_extension", &page_extension);
+    TEMPLATES.render("list.html", &context).unwrap()
+}
+
 pub fn render_item(
     lookup: &LookupFn,
     i: &mut Item,
@@ -123,15 +143,14 @@ pub async fn anchorage(
         .filter(anchor.eq(true))
         .load::<Item>(&db.get().unwrap())
         .unwrap();
-    let mut context = Context::new();
-    context.insert("items", &anchored_items);
-    context.insert("title", "#[^^^]");
-    context.insert("back_path", ".");
-    context.insert("edit", &true);
     Ok(web::HttpResponse::Ok()
        .content_type("text/html; charset=UTF-8")
-       .body(TEMPLATES.render("list.html", &context)
-             .unwrap())
+       .body(render_list(
+           &anchored_items.iter().collect(),
+           "#[^^^]",
+           ".",
+           ""
+       ))
     )
 }
 
@@ -142,15 +161,14 @@ pub async fn all(
     let all_items = item
         .load::<Item>(&db.get().unwrap())
         .unwrap();
-    let mut context = Context::new();
-    context.insert("items", &all_items);
-    context.insert("title", "#[=-=]");
-    context.insert("back_path", ".");
-    context.insert("edit", &true);
     Ok(web::HttpResponse::Ok()
        .content_type("text/html; charset=UTF-8")
-       .body(TEMPLATES.render("list.html", &context)
-             .unwrap())
+       .body(render_list(
+           &all_items.iter().collect(),
+           "#[=-=]",
+           ".",
+           ""
+       ))
     )
 }
 
