@@ -252,16 +252,10 @@ impl<'l, 's> Evaluator<'l, 's> {
                 for arg in args {
                     results.push(match arg {
                         Ref(addr) => match self.heap.get(addr) {
-                            Some(e@Str(_)) | Some(e@Exp(_)) =>
-                                e.to_string(),
-                            Some(e) =>
-                                format!("{}", html!( span(class="expr")
-                                                     : Raw(e.to_string()))),
+                            Some(e) => e.to_string(),
                             None => return Err(Unsupported(addr.to_string())),
                         },
-                        e@Str(_) | e@Exp(_) => e.to_string(),
-                        e => format!("{}", html!( span(class="expr")
-                                                  : Raw(e.to_string()))),
+                        e => e.to_string(),
                     });
                 }
 
@@ -1115,13 +1109,7 @@ impl<'l, 's> Evaluator<'l, 's> {
                             ));
                             pushd!(Ok(Op(Apply)))
                         },
-                        Some(e@Str(_)) | Some(e@Exp(_)) => pushd!(Ok(Str(
-                            e.to_string()
-                        ))),
-                        Some(e) => pushd!(Ok(Str(
-                            format!("{}", html!( span(class="expr")
-                                                 : Raw(e.to_string())))
-                        ))),
+                        Some(e) => pushd!(Ok(Str(e.to_string()))),
                         None => {
                             pushd!(Err(InternalError(
                                 "Corrupted reference."
@@ -1129,11 +1117,7 @@ impl<'l, 's> Evaluator<'l, 's> {
                             continue;
                         },
                     },
-                    e@Str(_) | e@Exp(_) => pushd!(Ok(Str(e.to_string()))),
-                    e => pushd!(Ok(Str(
-                        format!("{}", html!( span(class="expr")
-                                             : Raw(e.to_string())))
-                    ))),
+                    e => pushd!(Ok(Str(e.to_string()))),
                 },
                 OpIf(et, ef) => if let False = popd!() {
                     pushk!(Data(ef));
