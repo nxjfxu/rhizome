@@ -207,6 +207,25 @@ pub async fn get_item(
     }
 }
 
+#[get("/raw/{id:.+}")]
+pub async fn get_raw_item(
+    iid: web::Path<String>,
+    db: web::Data<Arc<Pool<ConnectionManager<SqliteConnection>>>>,
+) -> Result<HttpResponse> {
+    let iid = iid.into_inner();
+    let query_result = item.find(&iid)
+        .first::<Item>(&db.get().unwrap());
+
+    match query_result {
+        Ok(i) => Ok(web::HttpResponse::Ok()
+                    .content_type("text/plain; charset=utf-8")
+                    .body(i.text)),
+
+        _ => Ok(web::HttpResponse::NotFound()
+                .body("not found")),
+    }
+}
+
 #[get("/edit/{id:.+}")]
 pub async fn edit_item(
     iid: web::Path<String>,

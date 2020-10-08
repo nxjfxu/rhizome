@@ -163,6 +163,7 @@ async fn main() -> std::io::Result<()> {
             .service(anchorage)
             .service(all)
             .service(get_item)
+            .service(get_raw_item)
             .service(edit_item)
             .service(post_item)
             .service(new_item)
