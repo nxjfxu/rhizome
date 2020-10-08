@@ -900,9 +900,21 @@ impl<'l, 's> Evaluator<'l, 's> {
                         if let Some(Str(i)) = arg_exprs.get(0) {
                             if self.is_required_available(i) {
                                 pushd!(Ok(Void));
-                                to_make_available.last_mut()
-                                    .unwrap()
-                                    .insert(i.clone());
+                                if !self.required.contains_key(self.current_item()) {
+                                    self.required.insert(
+                                        self.current_item().clone(),
+                                        HashMap::new()
+                                    );
+                                }
+                                let mut to_provide = Vec::new();
+                                for (x, v) in self.required[i].iter() {
+                                    to_provide.push((x.clone(), v.clone()));
+                                }
+                                for (x, v) in to_provide {
+                                    self.required.get_mut(&self.current_item().clone())
+                                        .unwrap()
+                                        .insert(x, v);
+                                }
                             } else {
                                 pushd!(Err(ArgumentError(format!(
                                     "Must require '{}' before providing its content.",
