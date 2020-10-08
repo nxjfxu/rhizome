@@ -562,7 +562,7 @@ impl<'l, 's> Evaluator<'l, 's> {
             OpLet(Vec<String>, Expr),
             OpCluster(Vec<String>),
             OpExtract(String, bool),
-            OpUpdate(Vec<String>),
+            OpMutation(bool, Vec<String>),
 
             OpProvide(Vec<String>),
         }
@@ -848,7 +848,7 @@ impl<'l, 's> Evaluator<'l, 's> {
                                      arg_exprs)]
                         )))
                     },
-                    Op(Update) => if arg_exprs.len() >= 1 {
+                    Op(op@Mitosis) | Op(op@Update) => if arg_exprs.len() >= 1 {
                         let o = arg_exprs.remove(0);
                         let (xs, mut es) = match parse_bindings(&arg_exprs) {
                             Ok(p) => p,
@@ -858,16 +858,18 @@ impl<'l, 's> Evaluator<'l, 's> {
                             },
                         };
 
-                        pushk!(OpUpdate(xs));
+                        pushk!(OpMutation(op == Mitosis, xs));
                         es.reverse();
                         for e in es {
                             pushk!(Data(e));
                         }
                         pushk!(Data(o));
                     } else {
-                        pushd!(Err(ArgumentError(String::from(
-                            "Creation object from new object takes at least one arguments."
-                        ))));
+                        pushd!(Err(ArgumentError(String::from(if op == Mitosis {
+                            "Creating object from new object takes at least one arguments."
+                        } else {
+                            "Mutating object from new object takes at least one arguments."
+                        }))));
                     },
                     Op(o@Define) | Op(o@Set) => if arg_exprs.len() == 2 {
                         if let Var(x) = arg_exprs.remove(0) {
@@ -1211,7 +1213,7 @@ impl<'l, 's> Evaluator<'l, 's> {
                         pushd!(Ok(False));
                     }
                 },
-                OpUpdate(xs) => {
+                OpMutation(true, xs) => {
                     let mut es = Vec::with_capacity(xs.len());
                     for _ in 0..xs.len() {
                         es.insert(0, popd!());
@@ -1241,6 +1243,33 @@ impl<'l, 's> Evaluator<'l, 's> {
                     let addr = self.heap.insert(&o);
 
                     pushd!(Ok(Ref(addr)));
+                },
+                OpMutation(false, xs) => {
+                    let mut es = Vec::with_capacity(xs.len());
+                    for _ in 0..xs.len() {
+                        es.insert(0, popd!());
+                    }
+                    let bindings = match popd!() {
+                        Ref(addr) => match self.heap.get_mut(addr) {
+                            Some(Object(_, bindings)) => bindings,
+                            _ => {
+                                pushd!(Err(InternalError(
+                                    "Corrupted reference."
+                                )));
+                                continue;
+                            },
+                        },
+                        _ => {
+                            pushd!(Err(TypeError("object")));
+                            continue;
+                        },
+                    };
+
+                    for (x, e) in xs.into_iter().zip(es.into_iter()) {
+                        bindings.insert(x, e);
+                    }
+
+                    pushd!(Ok(Void));
                 },
                 OpDefineOrSet(define, x) => {
                     if define {

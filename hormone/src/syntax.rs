@@ -51,6 +51,7 @@ pub enum OpCode {
     Cluster,
     Extract,
     HasAttr,
+    Mitosis,
     Update,
     Apply,
 
@@ -126,7 +127,8 @@ impl std::fmt::Display for OpCode {
             Cluster => write!(f, ">+<"),
             Extract => write!(f, ">+"),
             HasAttr => write!(f, ">+?"),
-            Update => write!(f, "+<"),
+            Mitosis => write!(f, "+<"),
+            Update => write!(f, "!+<"),
             Apply => write!(f, "->"),
 
             Define => write!(f, "<-"),
@@ -201,7 +203,8 @@ impl OpCode {
             ">+<" => Some(Cluster),
             ">+" => Some(Extract),
             ">+?" => Some(HasAttr),
-            "+<" => Some(Update),
+            "+<" => Some(Mitosis),
+            "!+<" => Some(Update),
             "->" => Some(Apply),
 
             "<-" => Some(Define),
