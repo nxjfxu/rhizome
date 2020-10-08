@@ -5,6 +5,9 @@ authors = ["Xu, Junfeng <xu.junfeng@outlook.com>"]
 edition = "2018"
 
 
+[build-dependencies]
+cargo-lock = "6"
+
 [dependencies]
 actix-rt = "1"
 actix-web = "3"

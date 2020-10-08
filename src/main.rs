@@ -30,6 +30,9 @@ pub mod models;
 
 mod handler;
 
+// This module will be generated upon compilation
+mod generated;
+
 use self::handler::*;
 
 
@@ -75,7 +78,11 @@ async fn main() -> std::io::Result<()> {
         .takes_value(true);
 
     let matches = clap::App::new("Subterranean Articulation «Rhizome»")
-        .version(env!("CARGO_PKG_VERSION"))
+        .version(format!(
+            "rhizome-{} w/ hormone-{}",
+            env!("CARGO_PKG_VERSION"),
+            generated::HORMONE_VERSION,
+        ).as_str())
         .arg(dbpath_arg.clone())
         .arg(Arg::with_name("listen")
              .short("l")
