@@ -269,8 +269,16 @@ impl<'l, 's> Evaluator<'l, 's> {
                     "Expecting an ID as the argument."
                 )))?.clone())?;
 
+                let (path, fragment) = {
+                    let mut dest_parts = dest.splitn(2, "#");
+                    (
+                        dest_parts.next().unwrap_or("."),
+                        dest_parts.next()
+                    )
+                };
+
                 let path_to_current = Path::new(self.current_item());
-                let path_to_dest = Path::new(&dest);
+                let path_to_dest = Path::new(&path);
                 let mut final_path = path_to_current.parent()
                     .unwrap()
                     .components()
@@ -281,9 +289,11 @@ impl<'l, 's> Evaluator<'l, 's> {
                     "{}",
                     html!{ a(class="anchor",
                              href = Raw(format!(
-                                 "{}{}",
+                                 "{}{}{}{}",
                                  &final_path.display(),
-                                 &self.page_extension
+                                 &self.page_extension,
+                                 fragment.map(|_| "#").unwrap_or(""),
+                                 fragment.unwrap_or(""),
                              )))
                            : Raw(format!("[{}]", &dest))
                     })))
