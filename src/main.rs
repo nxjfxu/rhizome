@@ -265,8 +265,10 @@ fn run_export(matches: &clap::ArgMatches) -> std::io::Result<()> {
         );
         let path = out_dir.join("item").join(&i.id).with_extension("html");
         fs::create_dir_all(path.parent().unwrap())?;
-        let mut file = fs::File::create(path)?;
+        let mut file = fs::File::create(&path)?;
         file.write(body_text.as_bytes())?;
+
+        println!("\rWritten:  '{}'", &path.display());
     }
 
     Ok(())
