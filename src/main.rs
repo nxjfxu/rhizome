@@ -108,6 +108,10 @@ async fn main() -> std::io::Result<()> {
                          .long("output")
                          .help("The directory in which all exported files will be stored.")
                          .default_value("."))
+                    .arg(Arg::with_name("raw")
+                         .short("r")
+                         .long("raw")
+                         .help("Stores items as the unprocessed text files instead of the rendered HTML files."))
                     .arg(timeout_arg.clone()))
         .get_matches();
 
@@ -218,8 +222,13 @@ fn run_export(matches: &clap::ArgMatches) -> std::io::Result<()> {
     let dbpath = get_dbpath_from(matches, false);
     let output = matches.value_of("output").unwrap();
     let timeout = get_timeout_from(matches);
+    let raw = matches.is_present("raw");
 
-    println!("Exporting all content to '{}'.", &output);
+    println!(
+        "Exporting {} content to '{}'.",
+        if raw { "raw" } else { "processed" },
+        &output
+    );
 
     let manager = ConnectionManager::<SqliteConnection>::new(&dbpath);
     let conn = manager.connect()
@@ -242,35 +251,43 @@ fn run_export(matches: &clap::ArgMatches) -> std::io::Result<()> {
     let out_dir = Path::new(output);
     fs::create_dir_all(out_dir)?;
 
-    fs::File::create(out_dir.join("style.css"))?
-        .write(include_str!("../static/style.css").as_bytes())?;
-    fs::File::create(out_dir.join("all.html"))?
-        .write(render_list(
-            &all_items.iter().collect(),
-            "#[=-=]",
-            ".",
-            "html").as_bytes())?;
-    fs::File::create(out_dir.join("anchorage.html"))?
-        .write(render_list(&anchored_items, "#[^^^]", ".", "html").as_bytes())?;
+    if !raw {
+        fs::File::create(out_dir.join("style.css"))?
+            .write(include_str!("../static/style.css").as_bytes())?;
+        fs::File::create(out_dir.join("all.html"))?
+            .write(render_list(
+                &all_items.iter().collect(),
+                "#[=-=]",
+                ".",
+                "html").as_bytes())?;
+        fs::File::create(out_dir.join("anchorage.html"))?
+            .write(render_list(&anchored_items, "#[^^^]", ".", "html").as_bytes())?;
+    }
 
     for mut i in all_items {
         let back_path = iid_to_back_path(&i.id).display().to_string();
-        let body_text = render_item(
-            &lookup,
-            &mut i,
-            timeout,
-            false,
-            &back_path,
-            "html"
-        );
-        let path = out_dir.join("item").join(&i.id).with_extension("html");
+        let body_text = if raw {
+            i.text
+        } else {
+            render_item(
+                &lookup,
+                &mut i,
+                timeout,
+                false,
+                &back_path,
+                "html"
+            )
+        };
+        let path = out_dir.join(if raw { "raw" } else { "item" })
+            .join(&i.id)
+            .with_extension(if raw { "hmn" } else { "html" });
         fs::create_dir_all(path.parent().unwrap())?;
         let mut file = fs::File::create(&path)?;
         file.write(body_text.as_bytes())?;
 
         println!("Written:  '{}'", &path.display());
 
-        if i.anchor {
+        if i.anchor && raw {
             let path = path.with_extension("anchor");
             let mut file = fs::File::create(&path)?;
             file.write(b"")?;
