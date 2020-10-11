@@ -268,7 +268,14 @@ fn run_export(matches: &clap::ArgMatches) -> std::io::Result<()> {
         let mut file = fs::File::create(&path)?;
         file.write(body_text.as_bytes())?;
 
-        println!("\rWritten:  '{}'", &path.display());
+        println!("Written:  '{}'", &path.display());
+
+        if i.anchor {
+            let path = path.with_extension("anchor");
+            let mut file = fs::File::create(&path)?;
+            file.write(b"")?;
+            println!("Created anchor file:  '{}'", &path.display());
+        }
     }
 
     Ok(())
