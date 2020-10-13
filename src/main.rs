@@ -76,6 +76,10 @@ async fn main() -> std::io::Result<()> {
         .long("timeout")
         .help("Maximum time allowed for hormone evaluation, in milliseconds. [RHIZOME_TIMEOUT]")
         .takes_value(true);
+    let yes_arg = Arg::with_name("yes")
+        .short("y")
+        .long("yes")
+        .help("Disable prompts and always choose the default option.");
 
     let matches = clap::App::new("Subterranean Articulation «Rhizome»")
         .version(format!(
@@ -96,10 +100,7 @@ async fn main() -> std::io::Result<()> {
         .subcommand(SubCommand::with_name("init")
                     .about("Create a Rhizome database")
                     .arg(dbpath_arg.clone())
-                    .arg(Arg::with_name("yes")
-                         .short("y")
-                         .long("yes")
-                         .help("Disable prompts and always choose the default option.")))
+                    .arg(yes_arg.clone()))
         .subcommand(SubCommand::with_name("export")
                     .about("Render and save all content as HTML files")
                     .arg(dbpath_arg.clone())
@@ -113,6 +114,15 @@ async fn main() -> std::io::Result<()> {
                          .long("raw")
                          .help("Stores items as the unprocessed text files instead of the rendered HTML files."))
                     .arg(timeout_arg.clone()))
+        .subcommand(SubCommand::with_name("import")
+                    .about("Load raw .hmn files into a Rhizome database")
+                    .arg(dbpath_arg.clone())
+                    .arg(Arg::with_name("input")
+                         .short("i")
+                         .long("input")
+                         .help("The directory in which the raw .hmn files are located.")
+                         .default_value("."))
+                    .arg(yes_arg.clone()))
         .get_matches();
 
     if let Some(matches) = matches.subcommand_matches("init") {
@@ -120,6 +130,8 @@ async fn main() -> std::io::Result<()> {
         return Ok(());
     } else if let Some(matches) = matches.subcommand_matches("export") {
         return run_export(matches);
+    } else if let Some(matches) = matches.subcommand_matches("import") {
+        return run_import(matches);
     }
 
     let default = matches.is_present("default");
@@ -294,6 +306,120 @@ fn run_export(matches: &clap::ArgMatches) -> std::io::Result<()> {
             println!("Created anchor file:  '{}'", &path.display());
         }
     }
+
+    Ok(())
+}
+
+fn run_import(matches: &clap::ArgMatches) -> std::io::Result<()> {
+    use walkdir::WalkDir;
+
+    use std::fs;
+    use std::path::{Path, PathBuf};
+
+    use crate::models::*;
+    use crate::schema::item::dsl::*;
+
+    let dbpath = get_dbpath_from(matches, false);
+    let input = matches.value_of("input").unwrap();
+    let yes = matches.is_present("yes");
+
+    if !yes {
+        println!(
+            "Import content at '{}' to new database at '{}'? [y/N]",
+            Path::new(input).canonicalize()?.display(),
+            &dbpath
+        );
+        let mut input = String::new();
+        if !matches.is_present("yes") && (
+            !std::io::stdin().read_line(&mut input).is_ok() ||
+                !(input.starts_with("y") || input.starts_with("Y"))) {
+            return Ok(());
+        }
+    } else {
+        println!("Creating new database at '{}'.", &dbpath);
+    }
+
+    let input_path = Path::new(input).canonicalize()?;
+    input_path.metadata()?;
+    let raw_path = input_path.join("raw");
+    raw_path.metadata()?;
+    if !raw_path.is_dir() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "Cannot found the 'raw' directory in the input path."
+        ));
+    }
+
+    let mut items = Vec::new();
+    let mut prelude = None;
+    for entry in WalkDir::new(&raw_path)
+        .into_iter()
+        .filter_entry(
+            |e| e.file_type().is_dir()
+                ||
+                (e.file_type().is_file()
+                 &&
+                 e.path().extension().and_then(std::ffi::OsStr::to_str)
+                 ==
+                 Some("hmn"))
+        ) {
+            let path = PathBuf::from(entry?.path());
+            if path.is_dir() {
+                continue;
+            }
+
+            let id_path = path.strip_prefix(&raw_path)
+                .unwrap()
+                .with_extension("");
+            let i = Item {
+                id: id_path.display().to_string(),
+                text: fs::read_to_string(&path)?,
+                anchor: path.with_extension("anchor").exists(),
+            };
+
+            if i.id == ".^" {
+                prelude = Some(i);
+            } else {
+                items.push(i);
+            }
+        }
+
+    let manager = ConnectionManager::<SqliteConnection>::new(&dbpath);
+    embedded_migrations::run_with_output(
+        &manager.connect().expect(&format!("Unable to connect to {}.", &dbpath)),
+        &mut std::io::stdout()
+    ).unwrap();
+
+    let conn = manager.connect()
+        .expect(&format!("Unable to connect to {}.", &dbpath));
+
+    diesel::replace_into(item)
+        .values(&prelude)
+        .execute(&conn)
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+
+    if let Some(i) = prelude {
+        println!(
+            "Imported: {}[{}]",
+            if i.anchor { "^" } else { " " },
+            i.id,
+        );
+    }
+
+    diesel::insert_into(item)
+        .values(&items)
+        .execute(&conn)
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+
+    for i in items.iter() {
+        println!(
+            "Imported: {}[{}]",
+            if i.anchor { "^" } else { " " },
+            i.id,
+        );
+    }
+
+    println!("Done.");
 
     Ok(())
 }
