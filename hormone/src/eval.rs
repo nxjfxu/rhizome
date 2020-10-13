@@ -149,16 +149,20 @@ impl<'l, 's> EvaluatorConfig<'l, 's> {
     }
 
     pub fn for_item(self, iid: &str) -> Evaluator<'l, 's> {
+        let page_extension = self.page_extension.unwrap_or(String::from(""));
+        let mut context = Context::new();
+        context.define("~page-extension", &Str(page_extension.clone()));
+
         Evaluator {
             lookup_fn: self.lookup_fn,
             stop_fn: self.stop_fn,
 
-            page_extension: self.page_extension.unwrap_or(String::from("")),
+            page_extension,
 
             current_item_stack: vec![iid.to_string()],
 
             heap: Heap::new(),
-            context: Context::new(),
+            context,
             context_stack: vec![],
 
             required: BTreeMap::new(),
