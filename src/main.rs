@@ -64,7 +64,7 @@ fn get_timeout_from(matches: &clap::ArgMatches) -> u128 {
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
-    use clap::{Arg, SubCommand};
+    use clap::{Arg, ArgGroup, SubCommand};
 
     let dbpath_arg = Arg::with_name("dbpath")
         .short("p")
@@ -117,11 +117,19 @@ async fn main() -> std::io::Result<()> {
         .subcommand(SubCommand::with_name("import")
                     .about("Load raw .hmn files into a Rhizome database")
                     .arg(dbpath_arg.clone())
+                    .arg(Arg::with_name("raw-input")
+                         .short("r")
+                         .long("raw-input")
+                         .help("The directory in which the raw .hmn files to import are located.")
+                         .takes_value(true))
                     .arg(Arg::with_name("input")
                          .short("i")
                          .long("input")
-                         .help("The directory in which the raw .hmn files are located.")
-                         .default_value("."))
+                         .help("The directory in which a subdirectory called 'raw' that contains the .hmn files to import are located.")
+                         .takes_value(true))
+                    .group(ArgGroup::with_name("input-dir")
+                           .args(&["input", "raw-input"])
+                           .required(true))
                     .arg(yes_arg.clone()))
         .get_matches();
 
@@ -320,12 +328,15 @@ fn run_import(matches: &clap::ArgMatches) -> std::io::Result<()> {
     use crate::schema::item::dsl::*;
 
     let dbpath = get_dbpath_from(matches, false);
-    let input = matches.value_of("input").unwrap();
+    let input = matches.value_of("raw-input")
+        .unwrap_or(matches.value_of("input").unwrap_or("."));
     let yes = matches.is_present("yes");
+    let raw = matches.is_present("raw-input");
 
     if !yes {
         println!(
-            "Import content at '{}' to new database at '{}'? [y/N]",
+            "Import {}content at '{}' to new database at '{}'? [y/N]",
+            if raw { "raw " } else { "" },
             Path::new(input).canonicalize()?.display(),
             &dbpath
         );
@@ -341,7 +352,11 @@ fn run_import(matches: &clap::ArgMatches) -> std::io::Result<()> {
 
     let input_path = Path::new(input).canonicalize()?;
     input_path.metadata()?;
-    let raw_path = input_path.join("raw");
+    let raw_path = if raw {
+        input_path.into()
+    } else {
+        input_path.join("raw")
+    };
     raw_path.metadata()?;
     if !raw_path.is_dir() {
         return Err(std::io::Error::new(
