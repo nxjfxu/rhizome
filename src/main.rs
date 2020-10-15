@@ -269,12 +269,22 @@ fn run_export(matches: &clap::ArgMatches) -> std::io::Result<()> {
             .ok()
     });
 
+    let possible_custom_css_item = item.find(".*").first::<Item>(&conn).ok();
+    let custom_css = possible_custom_css_item.map(|mut i| render_text(
+        &lookup,
+        &mut i,
+        timeout,
+        ""
+    )).unwrap_or(String::from(""));
+
     let out_dir = Path::new(output);
     fs::create_dir_all(out_dir)?;
 
     if !raw {
-        fs::File::create(out_dir.join("style.css"))?
+        fs::File::create(out_dir.join("default-style.css"))?
             .write(include_str!("../static/style.css").as_bytes())?;
+        fs::File::create(out_dir.join("style.css"))?
+            .write(custom_css.as_bytes())?;
         fs::File::create(out_dir.join("all.html"))?
             .write(render_list(
                 &all_items.iter().collect(),
