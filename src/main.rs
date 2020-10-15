@@ -20,10 +20,8 @@ use actix_web::{
 use diesel::prelude::*;
 use diesel::r2d2::*;
 
-use lru::LruCache;
 
-
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 pub mod schema;
 pub mod models;
@@ -156,7 +154,6 @@ async fn main() -> std::io::Result<()> {
     println!("Ok.");
 
     let pool = Arc::new(Pool::new(manager).unwrap());
-    let cache = Arc::new(RwLock::new(LruCache::<String, String>::new(100)));
 
     let listen = matches.value_of("listen")
         .map(String::from)
@@ -180,7 +177,6 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(web::FormConfig::default().limit(5_000_000))
             .data(pool.clone())
-            .data(cache.clone())
             .data(timeout)
             .wrap(middleware::DefaultHeaders::new()
                   .header("Content-Type", "text/html"))

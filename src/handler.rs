@@ -8,13 +8,11 @@ use actix_web::{
 use diesel::prelude::*;
 use diesel::r2d2::*;
 
-use lru::LruCache;
-
 use serde::{Deserialize, Serialize};
 
 use tera::{Context, Tera};
 
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 use std::time::Instant;
 
 
@@ -298,7 +296,6 @@ impl ItemParams {
 pub async fn post_item(
     iid: web::Path<String>,
     params: web::Form<ItemParams>,
-    cache: web::Data<Arc<RwLock<LruCache<String, String>>>>,
     db: web::Data<Arc<Pool<ConnectionManager<SqliteConnection>>>>,
 ) -> Result<HttpResponse> {
     let iid = iid.into_inner();
@@ -308,10 +305,6 @@ pub async fn post_item(
 
     match result {
         Ok(_) => {
-            if let Ok(mut cache) = cache.write() {
-                cache.pop(&iid);
-            }
-
             Ok(web::HttpResponse::SeeOther()
                .header("Location", format!("/item/{}", &iid))
                .finish())
