@@ -87,6 +87,26 @@ pub fn render_list(
     TEMPLATES.render("list.html", &context).unwrap()
 }
 
+pub fn render_text(
+    lookup: &LookupFn,
+    i: &mut Item,
+    timeout: u128,
+    page_extension: &str,
+) -> String {
+    let evaluation = evaluate_timeout(
+        &i.id,
+        &lookup,
+        timeout,
+        true,
+        &i.text,
+        page_extension,
+    );
+    match &evaluation {
+        Ok(e) => e.expr.to_string(),
+        Err(e) => format!("Error: {}", e),
+    }
+}
+
 pub fn render_item(
     lookup: &LookupFn,
     i: &mut Item,
@@ -359,12 +379,49 @@ pub async fn post_new_item(
     }
 }
 
-#[get("/style.css")]
-pub async fn style_css() -> Result<HttpResponse> {
+#[get("/default-style.css")]
+pub async fn default_style_css() -> Result<HttpResponse> {
     Ok(web::HttpResponse::Ok()
        .content_type("text/css")
        .body(include_str!("../static/style.css"))
     )
+}
+
+#[get("/style.css")]
+pub async fn style_css(
+    db: web::Data<Arc<Pool<ConnectionManager<SqliteConnection>>>>,
+    timeout: web::Data<u128>,
+) -> Result<HttpResponse> {
+    let iid = ".*";
+    let query_result = item.find(&iid)
+        .first::<Item>(&db.get().unwrap());
+
+    match query_result {
+        Ok(mut i) => {
+            let lookup: Box<LookupFn> = Box::new(|iid| {
+                item.find(&iid)
+                    .first::<Item>(&db.get().unwrap())
+                    .map(|i| i.text)
+                    .ok()
+            });
+
+            let body_text = render_text(
+                &lookup,
+                &mut i,
+                *timeout.into_inner(),
+                ""
+            );
+            Ok(web::HttpResponse::Ok()
+               .content_type("text/css")
+               .body(body_text)
+            )
+        },
+
+        _ => Ok(web::HttpResponse::Ok()
+                .content_type("text/css")
+                .body("")
+        ),
+    }
 }
 
 pub async fn not_found() -> Result<HttpResponse> {

@@ -192,6 +192,7 @@ async fn main() -> std::io::Result<()> {
             .service(post_item)
             .service(new_item)
             .service(post_new_item)
+            .service(default_style_css)
             .service(style_css)
             .default_service(web::resource("")
                              .route(web::get().to(not_found)))

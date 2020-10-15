@@ -5,4 +5,5 @@ CREATE TABLE item (
 );
 
 INSERT INTO item (id, anchor, text) VALUES (".^", true, "#!");
+INSERT INTO item (id, anchor, text) VALUES (".*", true, "");
 
