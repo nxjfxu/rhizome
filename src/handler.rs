@@ -29,6 +29,7 @@ lazy_static! {
     static ref TEMPLATES: Tera = {
         let mut tera = Tera::default();
         tera.add_raw_templates(vec![
+            ("head.html", include_str!("../template/head.html")),
             ("topnav.html", include_str!("../template/topnav.html")),
             ("item.html", include_str!("../template/item.html")),
             ("edit.html", include_str!("../template/edit.html")),

@@ -1,12 +1,12 @@
 <html lang="en">
     <head>
-        <meta charset="UTF-8" >
+        {% include "head.html" %}
+
         {% if new %}
         <title>[+]</title>
         {% else %}
         <title>_/[{{ id }}]</title>
         {% endif %}
-        <link rel="stylesheet" href="{{ back_path }}/style.css"/>
     </head>
     <body>
         <hr/>
