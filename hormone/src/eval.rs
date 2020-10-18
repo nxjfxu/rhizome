@@ -1108,6 +1108,19 @@ impl<'l, 's> Evaluator<'l, 's> {
                                 "Expecting an ID as the argument."
                             ))));
                         },
+                        Op(Exec) => if let Some(Str(i)) = args.get(0) {
+                            match parse(&format!("#!\n{}", i)) {
+                                Ok(e) => pushk!(Data(speak(&e))),
+                                Err(e) => pushd!(Err(OtherError(format!(
+                                    "Encountered an error when parsing string: {}",
+                                    e
+                                )))),
+                            }
+                        } else {
+                            pushd!(Err(ArgumentError(String::from(
+                                "Expecting an ID as the argument."
+                            ))));
+                        },
                         Op(ApplyTo) if arg_count == 2 => {
                             let f = args.remove(0);
                             if let Some(l) = args.remove(0).to_list() {

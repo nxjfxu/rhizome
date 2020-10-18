@@ -38,6 +38,9 @@ pub enum OpCode {
     Interweave,
     Include,
 
+    // Execution
+    Exec,
+
     // Determination
     If,
 
@@ -123,6 +126,8 @@ impl std::fmt::Display for OpCode {
             Interweave => write!(f, "<~<"),
             Include => write!(f, "<~~"),
 
+            Exec => write!(f, "~>>"),
+
             If => write!(f, "?"),
 
             Failure => write!(f, "!!"),
@@ -203,6 +208,8 @@ impl OpCode {
 
             "<~~" => Some(Include),
             "<~<" => Some(Interweave),
+
+            "~>>" => Some(Exec),
 
             "?" => Some(If),
 

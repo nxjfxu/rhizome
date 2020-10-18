@@ -27,7 +27,7 @@ version = "1"
 # In-repository dependencies
 
 [dependencies.hormone]
-version = "0.8"
+version = "0.9"
 path = "hormone"
 
 
