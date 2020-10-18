@@ -238,6 +238,20 @@ pub fn parse(input: &str) -> Result<Ast, ParseError> {
                 stack.push(acc);
                 acc = Ast::RawText((line, col), String::new());
             },
+            (State::Hash, '+') => {
+                state = pop_state_stack!();
+                acc = push_ast(
+                    Ast::Atom((line, col), String::from("#+")),
+                    acc
+                );
+            },
+            (State::Hash, '-') => {
+                state = pop_state_stack!();
+                acc = push_ast(
+                    Ast::Atom((line, col), String::from("#-")),
+                    acc
+                );
+            },
             (State::Hash, _)
                 => return Err(CharacterFlaw((line, col))),
 
@@ -489,6 +503,9 @@ fn str_to_expr(str: &str) -> Expr {
     use Expr::*;
 
     match str {
+        "#+" => True,
+        "#-" => False,
+
         "." => Nil,
 
         _ => if let Ok(i) = isize::from_str_radix(str, 10) {
