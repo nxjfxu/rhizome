@@ -241,15 +241,15 @@ pub fn parse(input: &str) -> Result<Ast, ParseError> {
             (State::Hash, '+') => {
                 state = pop_state_stack!();
                 acc = push_ast(
-                    Ast::Atom((line, col), String::from("#+")),
-                    acc
+                    acc,
+                    Ast::Atom((line, col), String::from("#+"))
                 );
             },
             (State::Hash, '-') => {
                 state = pop_state_stack!();
                 acc = push_ast(
-                    Ast::Atom((line, col), String::from("#-")),
-                    acc
+                    acc,
+                    Ast::Atom((line, col), String::from("#-"))
                 );
             },
             (State::Hash, _)
