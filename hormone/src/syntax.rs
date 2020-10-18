@@ -17,6 +17,7 @@ pub enum OpCode {
 
     // Mathematics
     Add, Min, Mul, Div,
+    Le, Leq, Geq, Gr,
     And, Or, Not,
 
     // Native text operations
@@ -95,6 +96,11 @@ impl std::fmt::Display for OpCode {
             Mul => write!(f, "*"),
             Div => write!(f, "/"),
 
+            Le => write!(f, "<"),
+            Leq => write!(f, "<="),
+            Geq => write!(f, ">="),
+            Gr => write!(f, ">"),
+
             And => write!(f, "-*"),
             Or => write!(f, "-+"),
             Not => write!(f, "--"),
@@ -166,6 +172,11 @@ impl OpCode {
             "-" => Some(Min),
             "*" => Some(Mul),
             "/" => Some(Div),
+
+            "<" => Some(Le),
+            "<=" => Some(Leq),
+            ">=" => Some(Geq),
+            ">" => Some(Gr),
 
             "-*" => Some(And),
             "-+" => Some(Or),

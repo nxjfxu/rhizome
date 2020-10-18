@@ -249,7 +249,7 @@ impl<'l, 's> Evaluator<'l, 's> {
         self.current_item_stack.last().unwrap()
     }
 
-    fn apply_op(&mut self, op: OpCode, args: Vec<Expr>) -> EvalResult<Expr> {
+    fn apply_op(&mut self, op: OpCode, mut args: Vec<Expr>) -> EvalResult<Expr> {
         match op {
             Text => {
                 let mut results = Vec::with_capacity(args.len());
@@ -363,6 +363,43 @@ impl<'l, 's> Evaluator<'l, 's> {
                                   er
                               }))
                         .map(Int)),
+
+            Le => if args.len() == 2 {
+                let a1 = to_int(args.remove(0))?;
+                let a2 = to_int(args.remove(0))?;
+                Ok(Expr::from_bool(a1 < a2))
+            } else {
+                Err(ArgumentError(String::from(
+                    "Mathematical comparison takes two arguments."
+                )))
+            },
+            Leq => if args.len() == 2 {
+                let a1 = to_int(args.remove(0))?;
+                let a2 = to_int(args.remove(0))?;
+                Ok(Expr::from_bool(a1 <= a2))
+            } else {
+                Err(ArgumentError(String::from(
+                    "Mathematical comparison takes two arguments."
+                )))
+            },
+            Geq => if args.len() == 2 {
+                let a1 = to_int(args.remove(0))?;
+                let a2 = to_int(args.remove(0))?;
+                Ok(Expr::from_bool(a1 >= a2))
+            } else {
+                Err(ArgumentError(String::from(
+                    "Mathematical comparison takes two arguments."
+                )))
+            },
+            Gr => if args.len() == 2 {
+                let a1 = to_int(args.remove(0))?;
+                let a2 = to_int(args.remove(0))?;
+                Ok(Expr::from_bool(a1 > a2))
+            } else {
+                Err(ArgumentError(String::from(
+                    "Mathematical comparison takes two arguments."
+                )))
+            },
 
             Cons => if args.len() == 2 {
                 Ok(Cell(
