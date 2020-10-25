@@ -167,6 +167,7 @@ pub async fn anchorage(
 ) -> Result<HttpResponse> {
     let anchored_items = item
         .filter(anchor.eq(true))
+        .order(id.asc())
         .load::<Item>(&db.get().unwrap())
         .unwrap();
     Ok(web::HttpResponse::Ok()
@@ -185,6 +186,7 @@ pub async fn all(
     db: web::Data<Arc<Pool<ConnectionManager<SqliteConnection>>>>,
 ) -> Result<HttpResponse> {
     let all_items = item
+        .order(id.asc())
         .load::<Item>(&db.get().unwrap())
         .unwrap();
     Ok(web::HttpResponse::Ok()

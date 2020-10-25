@@ -253,6 +253,7 @@ fn run_export(matches: &clap::ArgMatches) -> std::io::Result<()> {
         .expect(&format!("Unable to connect to {}.", &dbpath));
 
     let all_items = item
+        .order(id.asc())
         .load::<Item>(&conn)
         .unwrap();
     let anchored_items = all_items.iter()
