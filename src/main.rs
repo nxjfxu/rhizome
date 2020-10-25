@@ -375,7 +375,6 @@ fn run_import(matches: &clap::ArgMatches) -> std::io::Result<()> {
     }
 
     let mut items = Vec::new();
-    let mut prelude = None;
     for entry in WalkDir::new(&raw_path)
         .into_iter()
         .filter_entry(
@@ -401,11 +400,7 @@ fn run_import(matches: &clap::ArgMatches) -> std::io::Result<()> {
                 anchor: path.with_extension("anchor").exists(),
             };
 
-            if i.id == ".^" {
-                prelude = Some(i);
-            } else {
-                items.push(i);
-            }
+            items.push(i);
         }
 
     let manager = ConnectionManager::<SqliteConnection>::new(&dbpath);
@@ -418,19 +413,6 @@ fn run_import(matches: &clap::ArgMatches) -> std::io::Result<()> {
         .expect(&format!("Unable to connect to {}.", &dbpath));
 
     diesel::replace_into(item)
-        .values(&prelude)
-        .execute(&conn)
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
-
-    if let Some(i) = prelude {
-        println!(
-            "Imported: {}[{}]",
-            if i.anchor { "^" } else { " " },
-            i.id,
-        );
-    }
-
-    diesel::insert_into(item)
         .values(&items)
         .execute(&conn)
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
