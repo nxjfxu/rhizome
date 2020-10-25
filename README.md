@@ -5,6 +5,12 @@ It consists of a minimalist storage of text fragments,
 and an interpreter for *Hormone*,
 a scripting language for text processing.
 
+[Document](https://nxjfxu.github.io/rhizome-guide/item/guide.html)
+
+Alternatively, you can find the guide
+[in this repository](https://github.com/nxjfxu/rhizome-guide).
+You can import the guide following the instructions in the rhizome-guide repository.
+
 
 ## Running Rhizome
 
