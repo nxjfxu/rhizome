@@ -180,6 +180,7 @@ async fn main() -> std::io::Result<()> {
             .data(timeout)
             .wrap(middleware::DefaultHeaders::new()
                   .header("Content-Type", "text/html"))
+            .service(index_to_anchorage)
             .service(anchorage)
             .service(all)
             .service(get_item)

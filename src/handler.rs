@@ -154,6 +154,13 @@ pub fn render_item(
 }
 
 
+#[get("/")]
+pub async fn index_to_anchorage() -> Result<HttpResponse> {
+    Ok(web::HttpResponse::MovedPermanently()
+       .header("Location", "/anchorage")
+       .finish())
+}
+
 #[get("/anchorage")]
 pub async fn anchorage(
     db: web::Data<Arc<Pool<ConnectionManager<SqliteConnection>>>>,
