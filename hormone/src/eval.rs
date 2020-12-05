@@ -16,6 +16,8 @@ use Expr::*;
 
 static PRELUDE_ID: &'static str = ".^";
 
+static FLAGS_VAR: &'static str = "~&";
+
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum EvalError {
@@ -168,7 +170,7 @@ impl<'l, 's> EvaluatorConfig<'l, 's> {
         let addr = heap.insert(&flags);
 
         context.define("~page-extension", &Str(page_extension.clone()));
-        context.define("~%", &Ref(addr));
+        context.define(FLAGS_VAR, &Ref(addr));
 
         Evaluator {
             lookup_fn: self.lookup_fn,
