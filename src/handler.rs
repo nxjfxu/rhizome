@@ -1,6 +1,7 @@
 use actix_web::{
     web,
 
+    HttpRequest,
     HttpResponse,
     Result,
 };
@@ -11,6 +12,8 @@ use diesel::r2d2::*;
 use serde::{Deserialize, Serialize};
 
 use tera::{Context, Tera};
+
+use url::Url;
 
 use std::sync::Arc;
 use std::time::Instant;
@@ -90,6 +93,7 @@ pub fn render_text(
     i: &mut Item,
     timeout: u128,
     page_extension: &str,
+    flags: &mut FlagIter,
 ) -> String {
     let evaluation = evaluate_timeout(
         &i.id,
@@ -98,6 +102,7 @@ pub fn render_text(
         true,
         &i.text,
         page_extension,
+        flags,
     );
     match &evaluation {
         Ok(e) => e.expr.to_string(),
@@ -112,6 +117,7 @@ pub fn render_item(
     edit: bool,
     back_path: &str,
     page_extension: &str,
+    flags: &mut FlagIter,
 ) -> String {
     let begin = Instant::now();
     let evaluation = evaluate_timeout(
@@ -121,6 +127,7 @@ pub fn render_item(
         true,
         &i.text,
         page_extension,
+        flags,
     );
     i.text = match &evaluation {
         Ok(e) => e.expr.to_string(),
@@ -202,6 +209,7 @@ pub async fn all(
 
 #[get("/item/{id:.+}")]
 pub async fn get_item(
+    req: HttpRequest,
     iid: web::Path<String>,
     db: web::Data<Arc<Pool<ConnectionManager<SqliteConnection>>>>,
     timeout: web::Data<u128>,
@@ -210,6 +218,16 @@ pub async fn get_item(
     let query_result = item.find(&iid)
         .first::<Item>(&db.get().unwrap());
     let back_path = iid_to_back_path(&iid).display().to_string();
+
+    // Rather hack-ish, but needs no special library for handling query
+    let flags = Url::parse(&format!(
+        "localhost:70000{}",
+        req.uri().path_and_query().unwrap().as_str()
+    )).map(
+        |u| u.query_pairs()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect()
+    );
 
     match query_result {
         Ok(mut i) => {
@@ -226,7 +244,8 @@ pub async fn get_item(
                 *timeout.into_inner(),
                 true,
                 &back_path,
-                ""
+                "",
+                &mut flags.unwrap_or(vec![]).into_iter(),
             );
             Ok(web::HttpResponse::Ok().body(body_text))
         },
@@ -411,7 +430,8 @@ pub async fn style_css(
                 &lookup,
                 &mut i,
                 *timeout.into_inner(),
-                ""
+                "",
+                &mut std::iter::empty(),
             );
             Ok(web::HttpResponse::Ok()
                .content_type("text/css")

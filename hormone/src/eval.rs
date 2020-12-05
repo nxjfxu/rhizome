@@ -58,6 +58,7 @@ impl std::error::Error for EvalError { }
 use EvalError::*;
 
 
+pub type FlagIter      = dyn std::iter::Iterator<Item = (String, String)>;
 pub type LookupFn<'l>  = dyn 'l + Fn(&str) -> Option<String>;
 pub type StopFn        = dyn Fn()     -> bool;
 pub type EvalResult<T> = Result<T, EvalError>;
@@ -111,6 +112,7 @@ pub struct EvaluatorConfig<'l, 's> {
     stop_fn: Option<&'s StopFn>,
 
     page_extension: Option<String>,
+    flags: BTreeMap<String, String>,
 }
 
 impl<'l, 's> Default for EvaluatorConfig<'l, 's> {
@@ -120,6 +122,7 @@ impl<'l, 's> Default for EvaluatorConfig<'l, 's> {
             stop_fn: None,
 
             page_extension: None,
+            flags: BTreeMap::new(),
         }
     }
 }
@@ -148,10 +151,24 @@ impl<'l, 's> EvaluatorConfig<'l, 's> {
         }
     }
 
+    pub fn with_flags(mut self, flags: &mut FlagIter) -> Self {
+        self.flags.extend(flags.map(|(k, v)| (k.clone(), v.clone())));
+        self
+    }
+
     pub fn for_item(self, iid: &str) -> Evaluator<'l, 's> {
         let page_extension = self.page_extension.unwrap_or(String::from(""));
         let mut context = Context::new();
+        let mut heap = Heap::new();
+
+        let flags = Object(
+            None,
+            self.flags.into_iter().map(|(k, v)| (k, Str(v))).collect()
+        );
+        let addr = heap.insert(&flags);
+
         context.define("~page-extension", &Str(page_extension.clone()));
+        context.define("~%", &Ref(addr));
 
         Evaluator {
             lookup_fn: self.lookup_fn,
@@ -161,7 +178,7 @@ impl<'l, 's> EvaluatorConfig<'l, 's> {
 
             current_item_stack: vec![iid.to_string()],
 
-            heap: Heap::new(),
+            heap,
             context,
             context_stack: vec![],
 

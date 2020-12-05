@@ -9,7 +9,7 @@ mod heap;
 
 mod eval;
 use eval::*;
-pub use eval::{LookupFn, StopFn, Evaluation};
+pub use eval::{FlagIter, LookupFn, StopFn, Evaluation};
 
 mod sanitize;
 
@@ -64,6 +64,7 @@ pub fn evaluate<'l, 's>(
     string: bool,
     input: &str,
     page_extension: &str,
+    flags: &mut FlagIter,
 ) -> Result<Evaluation, HormoneError> {
     let ast = parse(input)?;
     let expr = speak(&ast);
@@ -75,6 +76,7 @@ pub fn evaluate<'l, 's>(
     let evaluator = EvaluatorConfig::new()
         .with_lookup(lookup)
         .with_page_extension(page_extension)
+        .with_flags(flags)
         .for_item(item);
     Ok(evaluator.eval_to_result(expr)?)
 }
@@ -86,6 +88,7 @@ pub fn evaluate_timeout<'l>(
     string: bool,
     input: &str,
     page_extension: &str,
+    flags: &mut FlagIter,
 ) -> Result<Evaluation, HormoneError> {
     use std::time::Instant;
 
@@ -105,6 +108,7 @@ pub fn evaluate_timeout<'l>(
         .with_lookup(lookup)
         .with_stop(&stop)
         .with_page_extension(page_extension)
+        .with_flags(flags)
         .for_item(item);
     Ok(evaluator.eval_to_result(expr)?)
 }

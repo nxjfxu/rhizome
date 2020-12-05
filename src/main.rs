@@ -272,7 +272,8 @@ fn run_export(matches: &clap::ArgMatches) -> std::io::Result<()> {
         &lookup,
         &mut i,
         timeout,
-        ""
+        "",
+        &mut std::iter::empty(),
     )).unwrap_or(String::from(""));
 
     let out_dir = Path::new(output);
@@ -304,7 +305,8 @@ fn run_export(matches: &clap::ArgMatches) -> std::io::Result<()> {
                 timeout,
                 false,
                 &back_path,
-                "html"
+                "html",
+                &mut std::iter::empty(),
             )
         };
         let path = out_dir.join(if raw { "raw" } else { "item" })
@@ -384,7 +386,7 @@ fn run_import(matches: &clap::ArgMatches) -> std::io::Result<()> {
                  &&
                  e.path().extension().and_then(std::ffi::OsStr::to_str)
                  ==
-                 Some("hmn"))
+                Some("hmn"))
         ) {
             let path = PathBuf::from(entry?.path());
             if path.is_dir() {
