@@ -15,6 +15,7 @@ use tera::{Context, Tera};
 
 use url::Url;
 
+use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::Instant;
 
@@ -137,6 +138,15 @@ pub fn render_item(
         Ok(e) => e.cycles,
         Err(_) => 0,
     };
+    let flags = match &evaluation {
+        Ok(e) => e.get_flags(),
+        Err(_) => BTreeMap::new(),
+    };
+
+    // Return the text directly if flag 'frame' is set to 'none'
+    if let Some("none") = flags.get("frame").map(String::as_str) {
+        return i.text.clone();
+    }
 
     let time_spent = begin.elapsed().as_nanos();
     let time_spent_string = format!(

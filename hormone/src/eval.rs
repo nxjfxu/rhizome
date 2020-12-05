@@ -202,6 +202,25 @@ pub struct Evaluation {
     pub heap: Heap,
 }
 
+impl Evaluation {
+    pub fn get_flags(&self) -> BTreeMap<String, String> {
+        if let Some(Ref(addr)) = self.context.get(FLAGS_VAR) {
+            if let Some(Object(_, bindings)) = self.heap.get(*addr) {
+                bindings.iter()
+                    .filter_map(|(k, v)| match v {
+                        Str(s) => Some((k.clone(), s.clone())),
+                        _      => None,
+                    })
+                    .collect()
+            } else {
+                BTreeMap::new()
+            }
+        } else {
+            BTreeMap::new()
+        }
+    }
+}
+
 
 pub struct Evaluator<'l, 's> {
     lookup_fn: &'l LookupFn<'l>,
