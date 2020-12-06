@@ -1,6 +1,6 @@
 [package]
 name = "rhizome"
-version = "0.7.0"
+version = "0.8.0"
 authors = ["Xu, Junfeng <xu.junfeng@outlook.com>"]
 edition = "2018"
 
@@ -15,6 +15,7 @@ clap = "2"
 lazy_static = "1"
 serde = "1"
 tera = "1"
+url = "2"
 walkdir = "2"
 
 [dependencies.diesel]
@@ -27,7 +28,7 @@ version = "1"
 # In-repository dependencies
 
 [dependencies.hormone]
-version = "0.9"
+version = "0.10"
 path = "hormone"
 
 

@@ -946,7 +946,7 @@ dependencies = [
 
 [[package]]
 name = "hormone"
-version = "0.9.1"
+version = "0.10.0"
 dependencies = [
  "horrorshow",
  "pulldown-cmark",
@@ -1606,6 +1606,7 @@ dependencies = [
  "lazy_static",
  "serde",
  "tera",
+ "url",
  "walkdir",
 ]
 
