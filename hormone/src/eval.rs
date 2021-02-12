@@ -354,6 +354,17 @@ impl<'l, 's> Evaluator<'l, 's> {
                                })))
             },
 
+            Not => if args.len() == 1 {
+                Ok(match args.pop().unwrap() {
+                    Nil | False => True,
+                    _ => False,
+                })
+            } else {
+                Err(ArgumentError(String::from(
+                    "Logic negation takes one argument."
+                )))
+            },
+
             Add => args.into_iter()
                 .map(to_int)
                 .fold(Ok(0), |ar, er| ar.and_then(|a : isize| if let Ok(e) = er {
@@ -641,6 +652,9 @@ impl<'l, 's> Evaluator<'l, 's> {
             AfterFun(Vec<Expr>),
             Application(usize, Expr),
 
+            Conjunction(Vec<Expr>),
+            Disjunction(Vec<Expr>),
+
             Data(Expr),
             EmbraceData(Expr),
 
@@ -829,6 +843,21 @@ impl<'l, 's> Evaluator<'l, 's> {
                             }
                             pushk!(EmbraceData(arg_expr));
                         }
+                    },
+
+                    Op(o@And) | Op(o@Or) => match arg_exprs.len() {
+                        0 => pushd!(Ok(True)),
+                        1 => pushk!(Data(arg_exprs.remove(0))),
+                        _ => {
+                            let ko = if o == And {
+                                Conjunction
+                            } else {
+                                Disjunction
+                            };
+                            let first = arg_exprs.remove(0);
+                            pushk!(ko(arg_exprs));
+                            pushk!(Data(first));
+                        },
                     },
 
                     Op(Lambda) => {
@@ -1211,6 +1240,32 @@ impl<'l, 's> Evaluator<'l, 's> {
                             continue;
                         }
                     }
+                },
+
+                Conjunction(mut rest) => match popd!() {
+                    r@False | r@Nil => pushd!(Ok(r)),
+                    _ => match rest.len() {
+                        0 => panic!("This case should be handled already."),
+                        1 => pushk!(Data(rest.remove(0))),
+                        _ => {
+                            let first = rest.remove(0);
+                            pushk!(Conjunction(rest));
+                            pushk!(Data(first));
+                        },
+                    },
+                },
+
+                Disjunction(mut rest) => match popd!() {
+                    False | Nil => match rest.len() {
+                        0 => panic!("This case should be handled already."),
+                        1 => pushk!(Data(rest.remove(0))),
+                        _ => {
+                            let first = rest.remove(0);
+                            pushk!(Disjunction(rest));
+                            pushk!(Data(first));
+                        },
+                    },
+                    r => pushd!(Ok(r)),
                 },
 
                 CloseScope => self.context.close(),
