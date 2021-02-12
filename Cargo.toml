@@ -2,6 +2,9 @@
 name = "rhizome"
 version = "0.8.0"
 authors = ["Xu, Junfeng <xu.junfeng@outlook.com>"]
+license = "AGPL-3.0-only"
+homepage = "https://github.com/nxjfxu/rhizome"
+repository = "https://github.com/nxjfxu/rhizome"
 edition = "2018"
 
 
