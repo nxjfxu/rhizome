@@ -356,7 +356,7 @@ impl<'l, 's> Evaluator<'l, 's> {
 
             Not => if args.len() == 1 {
                 Ok(match args.pop().unwrap() {
-                    Nil | False => True,
+                    False => True,
                     _ => False,
                 })
             } else {
@@ -1243,7 +1243,7 @@ impl<'l, 's> Evaluator<'l, 's> {
                 },
 
                 Conjunction(mut rest) => match popd!() {
-                    r@False | r@Nil => pushd!(Ok(r)),
+                    False => pushd!(Ok(False)),
                     _ => match rest.len() {
                         0 => panic!("This case should be handled already."),
                         1 => pushk!(Data(rest.remove(0))),
@@ -1256,7 +1256,7 @@ impl<'l, 's> Evaluator<'l, 's> {
                 },
 
                 Disjunction(mut rest) => match popd!() {
-                    False | Nil => match rest.len() {
+                    False => match rest.len() {
                         0 => panic!("This case should be handled already."),
                         1 => pushk!(Data(rest.remove(0))),
                         _ => {
