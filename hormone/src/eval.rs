@@ -991,8 +991,12 @@ impl<'l, 's> Evaluator<'l, 's> {
                     },
                     Op(o@Define) | Op(o@Set) => if arg_exprs.len() == 2 {
                         if let Var(x) = arg_exprs.remove(0) {
-                            pushk!(OpDefineOrSet(o == Define, x));
-                            pushk!(Data(arg_exprs.remove(0)));
+                            if o == Set && !self.context.has(&x) {
+                                pushd!(Err(Undefined(x)));
+                            } else {
+                                pushk!(OpDefineOrSet(o == Define, x));
+                                pushk!(Data(arg_exprs.remove(0)));
+                            }
                         } else {
                             pushd!(Err(TypeError("variable")));
                         }

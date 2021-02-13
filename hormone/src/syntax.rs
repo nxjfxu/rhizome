@@ -265,6 +265,16 @@ impl Context {
         }
     }
 
+    pub fn has(&self, x: &str) -> bool {
+        for table in &self.tables {
+            if table.contains_key(x) {
+                return true;
+            }
+        }
+
+        false
+    }
+
     pub fn get(&self, x: &str) -> Option<&Expr> {
         for table in &self.tables {
             if let result@Some(_) = table.get(x) {
@@ -289,7 +299,8 @@ impl Context {
             }
         }
 
-        self.tables[0].insert(x.to_owned(), e.clone());
+        panic!("Cannot mutate undefined variable '{}'.", x)
+        // self.tables[0].insert(x.to_owned(), e.clone());
     }
 
     pub fn open(&mut self) {
