@@ -13,7 +13,7 @@ pub use eval::{FlagIter, LookupFn, StopFn, Evaluation};
 
 mod sanitize;
 
-mod syntax;
+pub mod syntax;
 use crate::syntax::{Expr, OpCode};
 
 
