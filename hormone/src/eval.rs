@@ -1316,10 +1316,11 @@ impl<'l, 's> Evaluator<'l, 's> {
                     },
                     e => pushd!(Ok(Str(e.to_string()))),
                 },
-                OpIf(et, ef) => if let False = popd!() {
-                    pushk!(Data(ef));
-                } else {
-                    pushk!(Data(et));
+                OpIf(et, ef) => {
+                    self.context.open();
+
+                    pushk!(CloseScope);
+                    pushk!(Data(if let False = popd!() { ef } else { et }));
                 },
                 OpLet(xs, e) => {
                     let mut es = Vec::with_capacity(xs.len());
