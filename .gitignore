@@ -1,4 +1,5 @@
 /target
+/hormone/target
 *.db
 
 src/generated.rs
