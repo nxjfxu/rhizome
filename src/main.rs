@@ -40,7 +40,7 @@ fn get_dbpath_from(matches: &clap::ArgMatches, default: bool) -> String {
         .map(String::from)
         .or(std::env::var("RHIZOME_DB_PATH").ok())
         .or(if default {
-            println!("Using default database path.");
+            log::warn!("Using default database path './data.db'.");
             Some(String::from("data.db"))
         } else {
             None
@@ -54,7 +54,7 @@ fn get_timeout_from(matches: &clap::ArgMatches) -> u128 {
         .or(std::env::var("RHIZOME_TIMEOUT").ok())
         .and_then(|s| u128::from_str_radix(&s, 10).ok())
         .unwrap_or({
-            println!("Using default timeout (10,000 milliseconds).");
+            log::warn!("Using default timeout (10,000 milliseconds).");
             10_000
         })
 }
@@ -62,6 +62,8 @@ fn get_timeout_from(matches: &clap::ArgMatches) -> u128 {
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
+    env_logger::init();
+
     use clap::{Arg, ArgGroup, SubCommand};
 
     let dbpath_arg = Arg::with_name("dbpath")
@@ -144,14 +146,9 @@ async fn main() -> std::io::Result<()> {
 
     let dbpath = get_dbpath_from(&matches, default);
 
-    print!(
-        "Connecting to textual database at: {} ...",
-        dbpath
-    );
+    let manager = ConnectionManager::<SqliteConnection>::new(&dbpath);
 
-    let manager = ConnectionManager::<SqliteConnection>::new(dbpath);
-
-    println!("Ok.");
+    log::info!("Connected to textual database at '{}'.", &dbpath);
 
     let pool = Arc::new(Pool::new(manager).unwrap());
 
@@ -159,17 +156,14 @@ async fn main() -> std::io::Result<()> {
         .map(String::from)
         .or(std::env::var("RHIZOME_LISTEN").ok())
         .or(if default {
-            println!("Using default listen address.");
+            log::warn!("Using default listen address (127.0.0.1:8001).");
             Some(String::from("127.0.0.1:8001"))
         } else {
             None
         })
         .expect("The address to listen is not given.  Pleaee specify an address by either 1) setting the RHIZOME_LISTEN environment variable 2) supplying the --listen (-l) argument 3) use the --default flag to use the default option.");
 
-    println!(
-        "Listening: {}.",
-        listen,
-    );
+    log::info!("Listening: {}.", listen);
 
     let timeout = get_timeout_from(&matches);
 
